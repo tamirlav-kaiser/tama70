@@ -167,7 +167,7 @@ mark{background:#ffe6a8;color:inherit;border-radius:3px}
         <button class="tool" role="tab" aria-selected="true" data-tab="parcel" id="tab-parcel"><span class="rbtn"><svg viewBox="0 0 24 24"><path d="M4 5l7-2 9 4-2 12-9 2-5-6z"/></svg></span>חלקה</button>
         <button class="tool" role="tab" aria-selected="false" data-tab="xy" id="tab-xy"><span class="rbtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/></svg></span>נ.צ.</button>
         <button class="tool" role="tab" aria-selected="false" data-tab="st" id="tab-st"><span class="rbtn"><svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="14" rx="4"/><path d="M9 21l1.5-4M15 21l-1.5-4M6 11h12"/></svg></span>תחנה</button>
-        <button class="tool" role="tab" aria-selected="false" data-tab="ask" id="tab-ask" hidden><span class="rbtn"><svg viewBox="0 0 24 24"><path d="M5 5h14v10H10l-5 4z"/></svg></span>שאלה</button>
+        <button class="tool" role="tab" aria-selected="false" data-tab="ask" id="tab-ask"><span class="rbtn"><svg viewBox="0 0 24 24"><path d="M5 5h14v10H10l-5 4z"/></svg></span>שאלה</button>
         <button class="tool" role="tab" aria-selected="false" data-tab="search" id="tab-search"><span class="rbtn"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg></span>הוראות</button>
       </div>
     </div>
@@ -551,7 +551,7 @@ let chat=[],askCtl=null,sampleFn=null,dead=false;
 function setAskState(t){$('#askstate').textContent=t}
 function addMsg(who,text){const d=document.createElement('div');d.className='chat-msg '+(who==='user'?'user':'');d.innerHTML=`<span class="who">${who==='user'?'שאלה':'תשובה'}</span><div class="chat-body"></div>`;d.querySelector('.chat-body').textContent=text;$('#chat').append(d);return d.querySelector('.chat-body')}
 (async()=>{try{sampleFn=await window.claude?.use?.('sample')}catch(e){sampleFn=null}
-  if(!sampleFn){$('#askhint').textContent='שאלה חופשית זמינה כשהעמוד פתוח ב-Claude. הדו"ח, המפה והחיפוש עובדים גם בלעדיה.';$('#askbtn').disabled=true}})();
+  if(!sampleFn){$('#f-ask').hidden=true;const n=document.createElement('div');n.className='form';n.innerHTML='<div class="hint" style="font-size:.88rem;color:var(--ink)">שאלה חופשית זמינה לבעלי חשבון Claude. התשובות מבוססות על ההוראות, הלוחות והשכבות, עם הפניה לסעיף ולעמוד.</div><a class="go" style="text-align:center;text-decoration:none" href="https://claude.ai/artifact/99mWhYk6vbac4XrRgziQX5" target="_blank" rel="noopener">פתח את האתר ב-Claude ושאל ↗</a><div class="hint">נדרש חשבון Claude שקיבל גישה לאתר. השאלות נספרות על החשבון שלך.</div>';$('[data-pane="ask"]').append(n)}})();
 $('#f-ask').onsubmit=async e=>{e.preventDefault();const q=$('#in-q').value.trim();if(!q||!sampleFn)return;
   addMsg('user',q);$('#in-q').value='';const out=addMsg('claude','חושב…');chat.push({role:'user',content:q});
   askCtl=new AbortController();$('#stopbtn').hidden=false;$('#askbtn').disabled=true;setAskState('');
