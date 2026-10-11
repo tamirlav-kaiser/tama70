@@ -41,14 +41,14 @@ button{font-family:inherit}
 .rbtn{width:42px;height:42px;border-radius:50%;border:0;background:var(--panel);color:var(--ink);box-shadow:var(--out-s);cursor:pointer;display:grid;place-items:center;flex:none}
 .rbtn:active,.rbtn[aria-pressed="true"]{box-shadow:var(--in);color:var(--accent)}
 .rbtn svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.cap-body{overflow:auto;padding:6px 16px 16px;display:grid;gap:14px;min-height:0}
-.tile{border-radius:22px;box-shadow:var(--out-s);padding:14px 16px;background:var(--panel)}
+.cap-body{overflow-y:auto;overflow-x:hidden;padding:6px 16px 16px;display:grid;gap:14px;min-height:0}
+.tile{min-width:0;border-radius:22px;box-shadow:var(--out-s);padding:14px 16px;background:var(--panel)}
 .tile.inset{box-shadow:var(--in)}
 .sec-title{text-align:center;font-weight:600;font-size:.95rem;margin:2px 0 8px}
 /* tool row (Pen / Polygon / Marker / Eraser) */
-.tools{display:flex;justify-content:space-between;gap:6px}
-.tool{display:grid;justify-items:center;gap:6px;background:none;border:0;cursor:pointer;color:var(--muted);font-size:.74rem;padding:0}
-.tool .rbtn{width:46px;height:46px}
+.tools{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
+.tool{display:grid;justify-items:center;gap:6px;background:none;border:0;cursor:pointer;color:var(--muted);font-size:.72rem;padding:0;min-width:0;white-space:nowrap}
+.tool .rbtn{width:40px;height:40px}
 .tool[aria-selected="true"]{color:var(--ink);font-weight:600}
 .tool[aria-selected="true"] .rbtn{box-shadow:var(--in);color:var(--accent)}
 /* inputs */
