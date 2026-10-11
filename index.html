@@ -168,6 +168,7 @@ mark{background:#ffe6a8;color:inherit;border-radius:3px}
         <button class="tool" role="tab" aria-selected="false" data-tab="xy" id="tab-xy"><span class="rbtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/></svg></span>נ.צ.</button>
         <button class="tool" role="tab" aria-selected="false" data-tab="st" id="tab-st"><span class="rbtn"><svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="14" rx="4"/><path d="M9 21l1.5-4M15 21l-1.5-4M6 11h12"/></svg></span>תחנה</button>
         <button class="tool" role="tab" aria-selected="false" data-tab="ask" id="tab-ask"><span class="rbtn"><svg viewBox="0 0 24 24"><path d="M5 5h14v10H10l-5 4z"/></svg></span>שאלה</button>
+        <button class="tool" role="tab" aria-selected="false" data-tab="area" id="tab-area"><span class="rbtn"><svg viewBox="0 0 24 24"><path d="M4 6l6-2 10 3-2 11-8 2-6-5z" stroke-dasharray="3 2.5"/></svg></span>קו כחול</button>
         <button class="tool" role="tab" aria-selected="false" data-tab="search" id="tab-search"><span class="rbtn"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg></span>הוראות</button>
       </div>
     </div>
@@ -193,6 +194,16 @@ mark{background:#ffe6a8;color:inherit;border-radius:3px}
           <div class="hint" id="askstate"></div>
           <div class="hint" id="askhint">התשובה נבנית רק מההוראות, הלוחות והשכבות שבאתר, עם הפניה לסעיף ולעמוד.</div>
         </form>
+      </div>
+      <div data-pane="area" hidden>
+        <div class="form">
+          <div class="status"><div><b id="selmode-t">בחירה במפה: כבויה</b><span>לחיצה על חלקה מוסיפה/מסירה</span></div>
+            <button class="rbtn" id="selmode" type="button" aria-pressed="false" aria-label="הפעל בחירה במפה"><svg viewBox="0 0 24 24"><path d="M5 3l12 8-6 1 3 7-2 1-3-7-4 4z"/></svg></button></div>
+          <label class="field">הוספה לפי רשימה<textarea id="in-sel" rows="2" placeholder="6561: 7, 8, 12-15&#10;6638: 3"></textarea></label>
+          <div class="fields"><button class="go ghost" type="button" id="seladd">הוסף לרשימה</button><button class="go ghost" type="button" id="selclear">נקה</button></div>
+          <div id="sellist" class="hint">לא נבחרו חלקות.</div>
+          <button class="go" type="button" id="selrun">נתח את הקו הכחול</button>
+        </div>
       </div>
       <div data-pane="search" hidden>
         <form id="f-search" class="form"><input id="in-s" placeholder="צלע בלוק, תכנית חלקית, דיור מכליל…" aria-label="חיפוש בהוראות"><button class="go" type="submit">חפש בהוראות</button></form>
@@ -466,6 +477,7 @@ function draw(){const d=devicePixelRatio||1;ctx.fillStyle=css('--sea');ctx.fillR
     if(V.s<=0.06)for(const[n,x,y,c]of PD.loc)if(c>40)lab(n,x,y,c>2000?15:12,css('--muted'),700);
   }
   if(V.s>0.15){ctx.fillStyle=css('--core');for(const p of entrances){const[a,b]=toS(p[0],p[1]);ctx.fillRect(a-2*d,b-2*d,4*d,4*d)}}
+  if(SEL.size){ctx.lineWidth=2.2*d;for(const k of SEL){const o=PARCELS[k];if(!o)continue;ctx.beginPath();o.poly.forEach((p,i)=>{const[a,b]=toS(p[0],p[1]);i?ctx.lineTo(a,b):ctx.moveTo(a,b)});ctx.closePath();ctx.fillStyle='rgba(47,124,246,.22)';ctx.fill();ctx.strokeStyle=css('--blue');ctx.stroke()}}
   if(markerPoly){ctx.strokeStyle=css('--blue');ctx.lineWidth=2.5*d;ctx.beginPath();markerPoly.forEach((p,i)=>{const[a,b]=toS(p[0],p[1]);i?ctx.lineTo(a,b):ctx.moveTo(a,b)});ctx.closePath();ctx.stroke()}
   if(marker&&!markerPoly){const[a,b]=toS(marker[0],marker[1]);ctx.strokeStyle=css('--panel');ctx.lineWidth=4*d;ctx.beginPath();ctx.arc(a,b,8*d,0,7);ctx.stroke();ctx.strokeStyle=css('--blue');ctx.lineWidth=2.5*d;ctx.stroke()}
 }
@@ -480,7 +492,7 @@ cv.addEventListener('pointermove',e=>{const w=toW(e.offsetX,e.offsetY);const pc=
   if(!drag)return;pts.set(e.pointerId,[e.offsetX,e.offsetY]);
   if(pts.size===2&&drag.d0){const[a,b]=[...pts.values()];V.s=drag.s*Math.hypot(a[0]-b[0],a[1]-b[1])/drag.d0;moved=true;draw();return}
   const dx=e.offsetX-drag.x,dy=e.offsetY-drag.y;if(Math.abs(dx)+Math.abs(dy)>4)moved=true;V.cx=drag.cx-dx/V.s;V.cy=drag.cy+dy/V.s;draw()});
-cv.addEventListener('pointerup',e=>{pts.delete(e.pointerId);if(drag&&!moved){const w=toW(e.offsetX,e.offsetY);const pc=parcelAt(w[0],w[1]);
+cv.addEventListener('pointerup',e=>{pts.delete(e.pointerId);if(drag&&!moved&&SELMODE){const w=toW(e.offsetX,e.offsetY);const pc=parcelAt(w[0],w[1]);if(pc)toggleSel(pc.key)}else if(drag&&!moved){const w=toW(e.offsetX,e.offsetY);const pc=parcelAt(w[0],w[1]);
     if(pc){const[g,h]=pc.key.split('-');showParcel(parcelReportObj(pc,g,h),g,h.split('#')[0],false)}else runPoint(w[0],w[1],'נקודה במפה')}if(!pts.size)drag=null});
 cv.addEventListener('wheel',e=>{e.preventDefault();const w=toW(e.offsetX,e.offsetY),k=Math.exp(-e.deltaY*0.0015);V.s*=k;const w2=toW(e.offsetX,e.offsetY);V.cx+=w[0]-w2[0];V.cy+=w[1]-w2[1];draw()},{passive:false});
 $('#zin').onclick=()=>{V.s*=1.6;draw()};$('#zout').onclick=()=>{V.s/=1.6;draw()};$('#zall').onclick=fitAll;
@@ -524,7 +536,57 @@ function reportJSON(R){if(!R)return null;const s=R.station,rk=rahakFor(R),pk=par
     parking:pk?{access_index:pk.idx,interim:{res_per_unit:pk.interim[0],employment_m2_per_space:pk.interim[1],commerce_m2_per_space:pk.interim[2]},final:{res_per_unit:pk.final[0],employment_m2_per_space:pk.final[1],commerce_m2_per_space:pk.final[2]},source:"לוח 2 עמ' 41, סעיף 10.1"}:null,
     near_main_street:R.mainStreet,near_green_axis:R.greenAxis,interface_station:!!R.interface,parcel:R.parcel?{locality:R.parcel.loc,duplicate_key_in_layer:R.parcel.dup,area_m2:R.parcel.area,share_ring1:R.parcel.r1Share,share_core:R.parcel.coreShare,share_in_plan:R.parcel.inShare}:null,
     itm:{x:Math.round(R.x),y:Math.round(R.y)}}}
+/* ---------- blue line: multi-parcel area ---------- */
+const SEL=new Set();let SELMODE=false;
+function selKeyLabel(k){const[g,h]=k.split('-');return `${g}/${h.split('#')[0]}`}
+function renderSel(){const L2=[...SEL];$('#sellist').innerHTML=L2.length?`<b>${L2.length} חלקות</b> · ${fmt(L2.reduce((s,k)=>s+(PARCELS[k]?.area||0),0)/1000)} דונם<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px">${L2.slice(0,60).map(k=>`<button type="button" class="pill" data-k="${esc(k)}" title="הסר">${esc(selKeyLabel(k))} ✕</button>`).join('')}${L2.length>60?' …':''}</div>`:'לא נבחרו חלקות.';draw()}
+$('#sellist').addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(b){SEL.delete(b.dataset.k);renderSel()}});
+function toggleSel(k){SEL.has(k)?SEL.delete(k):SEL.add(k);renderSel()}
+$('#selmode').onclick=e=>{SELMODE=!SELMODE;e.currentTarget.setAttribute('aria-pressed',SELMODE);$('#selmode-t').textContent='בחירה במפה: '+(SELMODE?'פעילה':'כבויה');cv.style.cursor=SELMODE?'cell':'crosshair'};
+function parseSel(txt){const out=[],bad=[];for(const line of txt.split(/\n|;/)){const m=line.match(/^\s*(\d+)\s*[:/\-–]\s*(.+)$/);if(!m){if(line.trim())bad.push(line.trim());continue}
+  for(const part of m[2].split(/[,\s]+/).filter(Boolean)){const r=part.match(/^(\d+)(?:-(\d+))?$/);if(!r){bad.push(m[1]+':'+part);continue}
+    const a=+r[1],b=r[2]?+r[2]:a;for(let h=a;h<=Math.min(b,a+500);h++){const k=`${+m[1]}-${h}`;PARCELS[k]?out.push(k):(!r[2]&&bad.push(`${m[1]}/${h}`))}}}return{out,bad}}
+$('#seladd').onclick=async()=>{await loadParcels();const{out,bad}=parseSel($('#in-sel').value);out.forEach(k=>SEL.add(k));renderSel();if(bad.length)$('#sellist').insertAdjacentHTML('beforeend',`<div class="hint" style="color:var(--crit)">לא נמצאו בתחום התכנית: ${esc(bad.slice(0,12).join(', '))}</div>`)};
+$('#selclear').onclick=()=>{SEL.clear();renderSel()};
+function analyzeArea(keys){
+  const rows={},parcels=[];let tot=0,inPlan=0,r1A=0,coreA=0;const core10=[],split=[],stations=new Set(),zonesRing={1:new Set(),2:new Set()};
+  for(const k of keys){const o=PARCELS[k];if(!o)continue;const[g,h]=k.split('-');const R=parcelReportObj(o,g,h);if(R.error)continue;
+    const a=o.area,ai=a*o.inn,a1=a*Math.min(o.r1,o.inn),a2=Math.max(0,ai-a1);tot+=a;inPlan+=ai;r1A+=a1;coreA+=a*o.core;
+    if(o.core>=0.1)core10.push(selKeyLabel(k));if(R.parcel.split)split.push(selKeyLabel(k));
+    const s=R.station,z=R.zone;if(s)stations.add(s.code);
+    const key=`${s?s.code:'—'}|${z?z.kind:'—'}|${z&&z.num||''}`;
+    if(!rows[key])rows[key]={station:s,zone:z,a1:0,a2:0,v1:null,v2:null,n:0};const row=rows[key];row.a1+=a1;row.a2+=a2;row.n++;
+    if(a1>0)zonesRing[1].add(z?.kind);if(a2>0)zonesRing[2].add(z?.kind);
+    for(const ring of[1,2]){const rk=rahakFor({...R,ring});if(rk&&rk.value!=null)row['v'+ring]=rk.value}
+    parcels.push(selKeyLabel(k))}
+  let minFloor=0;const RW=Object.values(rows).map(r=>{const f=(r.v1||0)*r.a1+(r.v2||0)*r.a2;minFloor+=f;return{...r,floor:f}});
+  return{n:parcels.length,parcels,tot,inPlan,r1A,r2A:inPlan-r1A,coreA,core10,split,stations:[...stations],zonesRing,rows:RW,minFloor}}
+function renderArea(A){
+  let h=`<div class="rep-head"><b class="rep-title">קו כחול · ${A.n} חלקות</b><span class="pill">${fmt(A.tot/1000)} דונם</span>${A.r1A>0?'<span class="pill r1">טבעת ראשונה</span>':''}${A.r2A>0?'<span class="pill">טבעת שנייה</span>':''}${A.coreA>0?'<span class="pill core">מרחב ליבה</span>':''}</div>
+  <dl class="kv"><dt>שטח כולל</dt><dd>${fmt(A.tot)} מ"ר</dd><dt>בתחום התמ"א</dt><dd>${fmt(A.inPlan)} מ"ר</dd><dt>טבעת ראשונה</dt><dd>${fmt(A.r1A)} מ"ר</dd><dt>טבעת שנייה</dt><dd>${fmt(A.r2A)} מ"ר</dd><dt>מרחב ליבה</dt><dd>${fmt(A.coreA)} מ"ר</dd></dl>
+  <section class="block"><h3>היקף בנייה מינימלי (מוערך) ${CT('לוח 1 סעיף 1',22)}</h3><div class="big">${fmt(Math.round(A.minFloor))} מ"ר</div>
+  <div class="hint">Σ שטח × רח"ק מינימלי לכל תחנה/ייעוד/טבעת. פרשנות: חושב על שטח החלקות ברוטו. הרח"ק בתמ"א הוא ממוצע על המגרשים הסחירים בלבד (הגדרת רח"ק, ${C('7')}), כך שאחרי הקצאת שטחי ציבור הנפח יחושב מחדש על המגרשים הסחירים.</div>
+  <div class="tblwrap" style="margin-top:8px"><table class="park"><tr><th>תחנה</th><th>ייעוד</th><th>טבעת 1 (מ"ר × רח"ק)</th><th>טבעת 2 (מ"ר × רח"ק)</th><th>מינימום</th></tr>
+  ${A.rows.map(r=>`<tr><td>${esc(r.station?.name||'—')}</td><td>${esc((r.zone?.kind||'—')+(r.zone?.num?' '+r.zone.num:''))}</td><td>${r.a1?fmt(r.a1)+' × '+(r.v1??'—'):'—'}</td><td>${r.a2?fmt(r.a2)+' × '+(r.v2??'—'):'—'}</td><td>${r.floor?fmt(Math.round(r.floor)):'—'}</td></tr>`).join('')}</table></div></section>`;
+  const F=[];
+  F.push([A.inPlan>=10000?'info':'warn','תכנית חלקית – 10 דונם',`השטח בתחום התמ"א ${fmt(A.inPlan/1000)} דונם. ${A.inPlan>=10000?'עומד':'לא עומד'} בסף 10 הדונם לתכנית חלקית (אפשר פחות ביחידה תכנונית עצמאית) ${C('8.1.3.3')}. ההפקדה צריכה להיות תוך 3 שנים מתחילת התמ"א ${C('8.1.3.1')}.`]);
+  if(A.core10.length)F.push(['crit','מגבלת היתרים במרחב הליבה',`${A.core10.length} חלקות עם 10% ומעלה בליבה (${esc(A.core10.slice(0,10).join(', '))}${A.core10.length>10?'…':''}) ${C('5.5.1')}.`]);
+  if(A.r1A>0&&A.r2A>0)F.push(['info','שתי טבעות','אפשר להעביר עד 20% מהזכויות הנדרשות לעמידה ברח"ק בין הטבעות '+C('11.8')+'.']);
+  if(A.split.length)F.push(['warn','חלקות חצויות',`${A.split.length} חלקות חוצות גבול טבעת או גבול התכנית. מוסד התכנון יקבע אילו הוראות יחולו ${C('11.5')}.`]);
+  if(A.stations.length>1)F.push(['warn','יותר מתחנה אחת',`השטח משויך ל-${A.stations.length} תחנות. רח"ק ותמהיל לכל תחנה וטבעת בנפרד ${CT('לוח 1 סעיף 1ב',22)}. בטבעת השנייה בין תחנות ${C('11.7')}.`]);
+  for(const ring of[1,2])if(A.zonesRing[ring].has('מרחב עירוני מוטה מטרו')&&A.zonesRing[ring].has('אזור פיתוח'))F.push(['info','שני ייעודים באותה טבעת',`אפשר רח"ק נמוך לאחד הייעודים אם הממוצע עומד במינימום הגבוה, בתנאי תכנון כולל ${C('11.4')}, ${C('11.3')}.`]);
+  F.push(['info','תכנון כולל',`בדוק אם התכנית מהווה תכנון כולל (כל מתחם הפיתוח / חלק משמעותי ממרחב עירוני מוטה מטרו / כל מרחב הליבה או רובו) ${C('8.1.1')}, או חריג לפי ${C('8.1.2')}.`]);
+  h+='<div class="flags">'+F.map(([c,t,b])=>`<div class="flag ${c}"><b>${t}</b>${b}</div>`).join('')+'</div>';
+  return h}
+$('#selrun').onclick=()=>{if(!SEL.size){$('#sellist').textContent='בחר חלקות במפה או הזן רשימה.';return}const A=analyzeArea([...SEL]);marker=null;markerPoly=null;$('#rep').innerHTML=renderArea(A);
+  const pts=[...SEL].flatMap(k=>PARCELS[k]?.poly||[]);const b=pts.reduce((m,p)=>[Math.min(m[0],p[0]),Math.min(m[1],p[1]),Math.max(m[2],p[0]),Math.max(m[3],p[1])],[1e9,1e9,-1e9,-1e9]);const r=cv.getBoundingClientRect();zoomTo((b[0]+b[2])/2,(b[1]+b[3])/2,Math.min(3,Math.min(r.width/(b[2]-b[0]+1),r.height/(b[3]-b[1]+1))*0.4))};
 const TOOLS=[
+ {name:'area_report',description:'ניתוח מצרפי של קו כחול שמורכב מכמה חלקות: שטחים לפי טבעת וליבה, פירוק לפי תחנה וייעוד, היקף בנייה מינימלי מוערך ודגלים (8.1.3, 5.5.1, 11.5, 11.7, 11.8). קלט: רשימת חלקות בפורמט "גוש-חלקה". אם לא מועבר קלט, משתמש בחלקות שנבחרו במפה.',inputSchema:{type:'object',properties:{parcels:{type:'array',items:{type:'string'}}}},
+  async execute(i){await loadParcels();const keys=(Array.isArray(i.parcels)&&i.parcels.length?i.parcels.map(s=>String(s).replace(/[\/:]/,'-').replace(/\s/g,'')):[...SEL]).filter(k=>PARCELS[k]);if(!keys.length)throw new Error('לא נמצאו חלקות בתחום התכנית');
+   keys.forEach(k=>SEL.add(k));renderSel();const A=analyzeArea(keys);$('#rep').innerHTML=renderArea(A);setAskState(`ניתחתי ${A.n} חלקות`);
+   return{parcels:A.n,total_m2:Math.round(A.tot),in_plan_m2:Math.round(A.inPlan),ring1_m2:Math.round(A.r1A),ring2_m2:Math.round(A.r2A),core_m2:Math.round(A.coreA),parcels_core_ge_10pct:A.core10,split_parcels:A.split,stations:A.stations,
+    breakdown:A.rows.map(r=>({station:r.station?.name,code:r.station?.code,zone:r.zone?.kind,mitcham:r.zone?.num||null,ring1_m2:Math.round(r.a1),ring1_min_rahak:r.v1,ring2_m2:Math.round(r.a2),ring2_min_rahak:r.v2,min_floor_m2:Math.round(r.floor)})),
+    min_floor_total_m2:Math.round(A.minFloor),note:'מינימום מחושב על שטח ברוטו; הרח"ק בתמ"א הוא ממוצע על מגרשים סחירים (סעיף 7, לוח 1 סעיף 1ב עמ\' 22)'}}},
  {name:'parcel_report',description:'ניתוח מרחבי של גוש/חלקה מול השכבה הדיגיטלית של תמ"א 70: טבעת, ליבה, ייעוד, תחנה, רח"ק מינימלי, תמהיל, תקן חניה. מחזיר JSON עם מקורות.',inputSchema:{type:'object',properties:{gush:{type:'integer'},helka:{type:'integer'}},required:['gush','helka']},
   async execute(i){const R=await parcelReport(i.gush,i.helka);if(R.error)throw new Error(R.error);setAskState(`ניתחתי גוש ${i.gush} חלקה ${i.helka}`);showParcel(R,i.gush,i.helka,true);return reportJSON(R)}},
  {name:'point_report',description:'אותו ניתוח לנקודה בנ.צ. ITM (רשת ישראל החדשה, מטרים).',inputSchema:{type:'object',properties:{x:{type:'number'},y:{type:'number'}},required:['x','y']},
@@ -546,7 +608,7 @@ const RULES=`אתה עוזר תכנוני שעונה על שאלות לגבי ת
 4. תמ"א 70 אינה מקנה זכויות ולא ניתן להוציא מכוחה היתר (סעיפים 1.5, 13.1.1) – הערכים הם דרישות לתכניות מקומיות/מפורטות.
 5. אם המידע לא נמצא בכלים, אמור זאת ואל תנחש.
 6. ענה בעברית, תמציתי ומובנה: שורת תשובה, אחריה פירוט בנקודות, ובסוף "מקורות:" עם רשימת הסעיפים/העמודים.
-7. גוש/חלקה → parcel_report. נ.צ. → point_report. שם תחנה → station_info.`;
+7. כמה חלקות / קו כחול → area_report. גוש/חלקה → parcel_report. נ.צ. → point_report. שם תחנה → station_info.`;
 let chat=[],askCtl=null,sampleFn=null,dead=false;
 function setAskState(t){$('#askstate').textContent=t}
 function addMsg(who,text){const d=document.createElement('div');d.className='chat-msg '+(who==='user'?'user':'');d.innerHTML=`<span class="who">${who==='user'?'שאלה':'תשובה'}</span><div class="chat-body"></div>`;d.querySelector('.chat-body').textContent=text;$('#chat').append(d);return d.querySelector('.chat-body')}
