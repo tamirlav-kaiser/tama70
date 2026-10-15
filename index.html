@@ -72,9 +72,10 @@ textarea{resize:vertical;min-height:72px}
 /* map controls */
 .mapui{position:fixed;z-index:4;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:10px;padding:8px 10px;border-radius:999px;background:var(--panel);box-shadow:var(--out)}
 .goto{display:flex;gap:6px;align-items:center}
-.goto input{width:150px;padding:9px 12px;border-radius:999px;font-size:14px;direction:rtl;text-align:right}
+.goto-sep{color:var(--muted);font-weight:600}
+.goto input{width:84px;padding:9px 12px;border-radius:999px;font-size:14px;direction:rtl;text-align:right}
 .goto-msg{position:fixed;z-index:4;bottom:80px;left:50%;transform:translateX(-50%);font-size:.8rem;color:var(--crit);background:var(--panel);padding:5px 12px;border-radius:999px;box-shadow:var(--out-s)}
-@media (max-width:520px){.goto input{width:110px}}
+@media (max-width:520px){.goto input{width:64px}}
 .coord{position:fixed;z-index:4;bottom:80px;left:50%;transform:translateX(-50%);font:500 12.5px var(--f-body);background:var(--panel);padding:5px 12px;border-radius:999px;box-shadow:var(--out-s);direction:rtl;white-space:nowrap;max-width:calc(100% - 32px);overflow:hidden;text-overflow:ellipsis}
 .legend{position:fixed;z-index:4;bottom:136px;left:50%;transform:translateX(-50%);background:var(--panel);border-radius:22px;box-shadow:var(--out);padding:12px 16px;font-size:.76rem;display:grid;grid-template-columns:auto auto;gap:6px 16px;max-width:calc(100% - 32px)}
 .legend i{display:inline-block;width:14px;height:10px;vertical-align:middle;margin-inline-end:6px;border-radius:3px}
@@ -145,7 +146,7 @@ mark{background:#ffe6a8;color:inherit;border-radius:3px}
     <span><i style="border:2px dotted var(--search)"></i>תחום חיפוש למעבר ציבורי</span>
   </div>
   <div class="mapui">
-    <form id="f-goto" class="goto" role="search"><input id="in-goto" class="mono" inputmode="numeric" placeholder="גוש או גוש/חלקה" aria-label="התמקד בגוש או חלקה"><button class="rbtn" type="submit" aria-label="התמקד"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg></button></form>
+    <form id="f-goto" class="goto" role="search"><input id="in-goto" inputmode="numeric" placeholder="גוש" aria-label="גוש"><span class="goto-sep">/</span><input id="in-goto-h" inputmode="numeric" placeholder="חלקה" aria-label="חלקה (לא חובה)"><button class="rbtn" type="submit" aria-label="התמקד"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg></button></form>
     <button class="rbtn" id="zin" aria-label="התקרב"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
     <button class="rbtn" id="zout" aria-label="התרחק"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
     <button class="rbtn" id="zall" aria-label="הצג את כל התכנית"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
@@ -546,8 +547,12 @@ function reportJSON(R){if(!R)return null;const s=R.station,rk=rahakFor(R),pk=par
 /* ---------- go to gush / parcel ---------- */
 let FOCUS=null,gotoTimer=null;
 function gotoMsg(m){let el=$('#goto-msg');if(!el){el=document.createElement('div');el.id='goto-msg';el.className='goto-msg';$('#mapwrap').append(el)}el.textContent=m;el.hidden=!m;clearTimeout(gotoTimer);if(m)gotoTimer=setTimeout(()=>el.hidden=true,4000)}
-$('#f-goto').onsubmit=async e=>{e.preventDefault();await loadParcels();const v=$('#in-goto').value.trim();const m=v.match(/^(\d+)(?:\s*[\/\-\s:,]\s*(\d+))?$/);
-  if(!m){gotoMsg('הקלד גוש (6561) או גוש/חלקה (6561/7)');return}
+const gIn=$('#in-goto'),hIn=$('#in-goto-h');
+gIn.addEventListener('input',()=>{const m=gIn.value.match(/^\s*(\d+)\s*[\/\s\-:,]\s*(\d*)\s*$/);if(m){gIn.value=m[1];if(m[2])hIn.value=m[2];hIn.focus()}else gIn.value=gIn.value.replace(/[^\d]/g,'')});
+hIn.addEventListener('input',()=>{hIn.value=hIn.value.replace(/[^\d]/g,'')});
+hIn.addEventListener('keydown',e=>{if(e.key==='Backspace'&&!hIn.value){e.preventDefault();gIn.focus()}});
+$('#f-goto').onsubmit=async e=>{e.preventDefault();await loadParcels();const v=gIn.value.trim()+(hIn.value.trim()?'/'+hIn.value.trim():'');const m=v.match(/^(\d+)(?:\s*[\/\-\s:,]\s*(\d+))?$/);
+  if(!m){gotoMsg('הקלד מספר גוש, וחלקה אם רוצים');return}
   const g=+m[1];let list;
   if(m[2]){const o=PARCELS[`${g}-${+m[2]}`];if(!o){gotoMsg(`חלקה ${g}/${+m[2]} לא נמצאה בתחום התכנית`);return}list=[o]}
   else{list=Object.values(PARCELS).filter(o=>o.key.split('-')[0]==String(g));if(!list.length){gotoMsg(`גוש ${g} לא נמצא בתחום התכנית`);return}}
